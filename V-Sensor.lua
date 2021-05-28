@@ -145,6 +145,14 @@ local function annSuffixChanged(value)
 end
 --------------------------------------------------------------------
 
+local function formattedResult()
+  if  type(result)=="number" then
+    return string.format("%.1f %s",result,paramUnit)
+  else
+    return result or ""
+  end    
+end
+
 local function initForm(formID)
   currentForm=formID
   fIndex = 1
@@ -183,15 +191,15 @@ local function initForm(formID)
     form.addTextbox (paramUnit, 4,unitChanged,{width=180})
     
     form.addRow(2)
-    form.addSpacer(300,16)
+    linkIdx = form.addLabel({label=string.format("%s: %s",paramName,formattedResult()),width=300})
     form.addLink((function() form.reinit(2);form.waitForRelease() end),{label=string.format("%s = %s >>",lang.res,condition),font=FONT_BOLD})
-    
+
     form.addRow(2)
     form.addLabel({label="Select Announce Switch", width=220})
     form.addInputbox(annSwitch, true, annSwitchChanged)
 
     form.addRow(2)
-    form.addLabel({label="Select Continuous Ann Switch", width=220})
+    form.addLabel({label="Select Continuous Switch", width=220})
     form.addInputbox(contSwitch, true, contSwitchChanged)
 
     form.addRow(2)
@@ -250,18 +258,11 @@ local function keyPressed(key)
   end
 end  
 
-local function formattedResult()
-  if  type(result)=="number" then
-    return string.format("%.1f %s",result,paramUnit)
-  else
-    return result or ""
-  end    
-end
-
 local function printForm()
-  local r = string.format("%s: %s",paramName,formattedResult())
-  lcd.drawText(lcd.width - 10 - lcd.getTextWidth(FONT_BIG,r),120,r, FONT_BIG)
   if(currentForm==2)then                     
+    local r = string.format("%s: %s",paramName,formattedResult())
+    lcd.drawText(lcd.width - 10 - lcd.getTextWidth(FONT_BIG,r),0,r, FONT_BIG)
+
     lcd.drawText(10,20,condition or "",FONT_BIG) 
     --lcd.drawText(10+lcd.getTextWidth(FONT_BIG,condition),20,fAvailable[fIndex],FONT_BIG)
     local x=25
@@ -301,7 +302,7 @@ local function init()
   param12d = system.pLoad("param2")
   condition = system.pLoad("cond","")
   conditionChanged = true
-  paramName = system.pLoad("name","")
+  paramName = system.pLoad("name","V-Sensor")
   paramUnit = system.pLoad("unit","")
   system.registerForm(1,MENU_TELEMETRY,lang.appName,initForm,keyPressed,printForm);
   system.registerTelemetry(1,lang.appName..": "..paramName,0,printTelemetry); 
@@ -348,6 +349,10 @@ local function loop()
     --if not status then print(result) end
   else
     result = "N/A"
+  end
+
+  if form.getActiveForm() and (currentForm == 1) and linkIdx then
+    form.setProperties(linkIdx,{label = string.format("%s: %s",paramName,formattedResult())})
   end
 
   --print (system.getTimeCounter(), result)
