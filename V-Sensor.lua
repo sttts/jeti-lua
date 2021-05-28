@@ -46,6 +46,16 @@ local result = ""
 local currentForm=1
 local linkIdx=0
 
+local annSwitch
+local contSwitch
+local annMaxTime
+local annChange
+local lastAnnTC
+local lastAnnounced
+local announcing
+local annPrefix
+local annSuffix
+
 local lang
 
 --------------------------------------------------------------------
@@ -104,8 +114,35 @@ local function unitChanged(value)
    system.pSave("unit",value)      
 end
 
+local function annSwitchChanged(value)
+  annSwitch = value
+  system.pSave("annSwitch", annSwitch)
+end
 
- 
+local function contSwitchChanged(value)
+  contSwitch = value
+  system.pSave("contSwitch", contSwitch)
+end
+
+local function annMaxTimeChanged(value)
+  annMaxTime = value
+  system.pSave("annMaxTime", annMaxTime)
+end
+
+local function annChangeChanged(value)
+  annChange = value
+  system.pSave("annChange", annChange)
+end
+
+local function annPrefixChanged(value)
+  annPrefix = value
+  system.pSave("annPrefixChange", annPrefix)
+end
+
+local function annSuffixChanged(value)
+  annSuffix = value
+  system.pSave("annSuffixChange", annSuffix)
+end
 --------------------------------------------------------------------
 
 local function initForm(formID)
@@ -145,8 +182,34 @@ local function initForm(formID)
     form.addLabel({label=lang.sUnit,width=130})
     form.addTextbox (paramUnit, 4,unitChanged,{width=180})
     
-    form.addSpacer(300,8)
+    form.addRow(2)
+    form.addSpacer(300,16)
     form.addLink((function() form.reinit(2);form.waitForRelease() end),{label=string.format("%s = %s >>",lang.res,condition),font=FONT_BOLD})
+    
+    form.addRow(2)
+    form.addLabel({label="Select Announce Switch", width=220})
+    form.addInputbox(annSwitch, true, annSwitchChanged)
+
+    form.addRow(2)
+    form.addLabel({label="Select Continuous Ann Switch", width=220})
+    form.addInputbox(contSwitch, true, contSwitchChanged)
+
+    form.addRow(2)
+    form.addLabel({label="Announce at least every (sec)", width=220})
+    form.addIntbox(annMaxTime, 2, 600, 60, 0, 1, annMaxTimeChanged)
+
+    form.addRow(2)
+    form.addLabel({label="Announce at delta", width=220})
+    form.addIntbox(annChange, 0, 10000, 0, 0, 1, annChangeChanged)
+
+    form.addRow(2)
+    form.addLabel({label="Announce prefix", width=220})
+    form.addAudioFilebox(annPrefix, annPrefixChanged)
+
+    form.addRow(2)
+    form.addLabel({label="Announce suffix", width=220})
+    form.addAudioFilebox(annSuffix, annSuffixChanged)
+
     form.setButton(4,":tools",ENABLED)
   else -- Form 2
     form.setButton(4,":backspace",ENABLED)  
@@ -246,7 +309,14 @@ local function init()
   system.registerLogVariable(paramName,paramUnit,(function(index) 
     return type(result)=="number" and  result*10  or nil, 1   
   end))
-   
+  
+  annSwitch = system.pLoad("annSwitch")
+  contSwitch = system.pLoad("contSwitch")
+  annMaxTime = system.pLoad("annMaxTime", 60)
+  annChange = system.pLoad("annChange", 0)
+  annPrefix = system.pLoad("annPrefix", "")
+  annSuffix = system.pLoad("annSuffix", "")
+  lastAnnTC = system.getTimeCounter()
 end
 
 
@@ -279,9 +349,38 @@ local function loop()
   else
     result = "N/A"
   end
+
+  --print (system.getTimeCounter(), result)
+  if announcing == true and not system.isPlayback() then
+    announcing = false
+    lastAnnTC = system.getTimeCounter()
+  end
+  if not (result == "N/A") and not (result == "") and not system.isPlayback() then
+    local tc = system.getTimeCounter()
+    local delta = tc - lastAnnTC
+    
+    local swa  = system.getInputsVal(annSwitch)
+    local swc  = system.getInputsVal(contSwitch)
+
+    local conAnnDue = (delta > 1000*annMaxTime) and (swc and swc == 1)
+    local annDue = (delta > 1000) and (swa and swa == 1)
+    local changeDue = (delta > 1000) and (lastAnnounced and annChange > 0 and math.abs(lastAnnounced - result) > annChange)
+    if conAnnDue or annDue or changeDue then
+      if (annPrefix and not annPrefix == "") then
+        system.playFile(annPrefix)
+      end
+      system.playNumber(result, 0)
+      if (annSuffix and not annSuffix == "") then
+        system.playFile(annSuffix)
+      end
+      print (tc, result)
+      lastAnnounced = result
+      announcing = true
+    end 
+  end 
 end
  
 
 --------------------------------------------------------------------
 setLanguage()
-return { init=init, loop=loop, author="JETI model", version="1.00",name=lang.appName}
+return { init=init, loop=loop, author="JETI model, modified by Stefan Schimanski", version="1.00",name=lang.appName .. " Voice"}
