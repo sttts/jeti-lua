@@ -136,12 +136,12 @@ end
 
 local function annPrefixChanged(value)
   annPrefix = value
-  system.pSave("annPrefixChange", annPrefix)
+  system.pSave("annPrefix", annPrefix)
 end
 
 local function annSuffixChanged(value)
   annSuffix = value
-  system.pSave("annSuffixChange", annSuffix)
+  system.pSave("annSuffix", annSuffix)
 end
 --------------------------------------------------------------------
 
