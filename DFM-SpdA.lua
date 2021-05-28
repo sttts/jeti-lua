@@ -406,7 +406,8 @@ local function init()
    system.registerTelemetry(1, "Calibrated Airspeed", 1, calAirspeed)
 
    DEBUG = (select(2,system.getDeviceType()) == 1)-- true if on emulator
-
+   
+   --[[
    --after adding stall speed announcement don't really need this one anymore...
    --system.playFile('/Apps/DFM-SpdA/Spd_ann_act.wav', AUDIO_QUEUE)
    
@@ -421,6 +422,7 @@ local function init()
       print("Vs0Spd, units", Vs0Spd, unitsList[unitsIdx])
    end
    system.playNumber(Vs0Spd, 0, unitsList[unitsIdx])
+   --]]
    
    readSensors()
 
