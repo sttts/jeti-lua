@@ -371,11 +371,11 @@ local function loop()
     local annDue = (delta > 1000) and (swa and swa == 1)
     local changeDue = (delta > 1000) and (lastAnnounced and annChange > 0 and math.abs(lastAnnounced - result) > annChange)
     if conAnnDue or annDue or changeDue then
-      if (annPrefix and not annPrefix == "") then
+      if annPrefix and not (annPrefix == "") then
         system.playFile(annPrefix)
       end
-      system.playNumber(result, 0)
-      if (annSuffix and not annSuffix == "") then
+      system.playNumber(result, 0, paramUnit)
+      if annSuffix and not (annSuffix == "") then
         system.playFile(annSuffix)
       end
       print (tc, result)
