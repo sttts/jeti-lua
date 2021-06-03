@@ -204,7 +204,7 @@ local function initForm(formID)
 
     form.addRow(2)
     form.addLabel({label="Announce at least every (sec)", width=220})
-    form.addIntbox(annMaxTime, 2, 600, 60, 0, 1, annMaxTimeChanged)
+    form.addIntbox(annMaxTime, 3, 600, 60, 0, 1, annMaxTimeChanged)
 
     form.addRow(2)
     form.addLabel({label="Announce at delta", width=220})
@@ -360,7 +360,7 @@ local function loop()
     announcing = false
     lastAnnTC = system.getTimeCounter()
   end
-  if not (result == "N/A") and not (result == "") and not system.isPlayback() then
+  if not (result == "N/A") and not (result == "") then
     local tc = system.getTimeCounter()
     local delta = tc - lastAnnTC
     
